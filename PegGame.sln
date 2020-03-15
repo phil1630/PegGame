@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.852
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PegGame", "PegGame\PegGame.csproj", "{83EC98D9-C719-4F5F-BFC9-DF55BB6055B4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{83EC98D9-C719-4F5F-BFC9-DF55BB6055B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83EC98D9-C719-4F5F-BFC9-DF55BB6055B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83EC98D9-C719-4F5F-BFC9-DF55BB6055B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83EC98D9-C719-4F5F-BFC9-DF55BB6055B4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F75D95AA-105C-4C79-BD4B-43EA5C7A0DF3}
+	EndGlobalSection
+EndGlobal
