@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PegGame.Models
 {
     public class PegBoard
     {
         public List<PegHole> PegHoles { get; set; }
-        public List<PegHole> CurrentHoles { get; set; }
         public List<PegMove> Moves { get; set; }
-        public List<PegMove> LegalMoves { get; set; }
-        public List<PegBoard> PriorBoards { get; set; }
+        public List<LegalMove> LegalMoves { get; set; }
+        public List<BoardImage> PriorBoards { get; set; }
 
         public enum Outcome
         {
@@ -20,7 +20,7 @@ namespace PegGame.Models
 
         public PegBoard()
         {
-            // build list of holes - all but one occupied
+            // build the new board - list of holes - all but one occupied
             this.PegHoles = new List<PegHole>();
             PegHoles.Add(new PegHole() { Label = 1, Occupied = false });
             PegHoles.Add(new PegHole() { Label = 2, Occupied = true });
@@ -48,93 +48,156 @@ namespace PegGame.Models
             while (!done)
             {
                 // get list of legal moves
-                List<PegMove> legalMoves = GetLegalMoves();
+                List<PegMove> availableMoves = GetAvailableMoves();
 
-                // decide what move to make
-                foreach (var move in legalMoves)
+                // if no move available, game over
+                if (availableMoves.Count < 1)
                 {
-                    // compare valid moves to prior boards
-                    bool goodMove = IsMoveGood(move);
-                    if (goodMove)
-                    {
-                        // make move
-                        PegMove pegMove = MovePeg(this.PegHoles, move);
-
-                        // save the move
-                        this.Moves.Add(pegMove);
-
-                        // break out of loop
-                        break;
-                    }
+                    done = true;
+                    break;
                 }
 
+                // TODO: pick next move at random
+                PegMove nextMove = GetNextMove(availableMoves);
+                if(nextMove != null)
+                {
+                    // make move
+                    MovePeg(this.PegHoles, nextMove);
+
+                    // save the move
+                    this.Moves.Add(nextMove);
+                }
+                // if nextMove is null 
+
                 // if there is a single peg remaining, game won
-                if (PegsRemaining() == 1)
+                if (this.PegHoles.Where(h => h.Occupied).Count() == 1)
                 {
                     retVal = Outcome.Win;
 
                     // if game won and number of moves less than ten, game champ
                     if (this.Moves.Count < 10)
                         retVal = Outcome.Champ;
+
+                    done = true;
                 }
             }
             return retVal;
         }
 
-        private List<PegMove> GetLegalMoves()
+        public int PegsRemaining()
         {
-            List<PegMove> availableMove = new List<PegMove>();
+            return this.PegHoles.Where(h => h.Occupied).Count();
+        }
+
+        // choose the next move randomly from list
+        private PegMove GetNextMove(List<PegMove> availableMoves)
+        {
+            PegMove retVal = null;
+
+            List<int> alreadyChecked = new List<int>();
+            var random = new Random();
+            while(alreadyChecked.Count < availableMoves.Count)
+            {
+                int idx = random.Next(availableMoves.Count);
+                if (!alreadyChecked.Contains(idx))
+                {
+                    retVal = availableMoves[idx];
+                    break;
+                }
+            }
+            return retVal;
+        }
+
+        // return a list of legal moves that can be made on current board
+        private List<PegMove> GetAvailableMoves()
+        {
+            List<PegMove> availableMoves = new List<PegMove>();
 
             // iterate thru list of all holes
             foreach (var hole in this.PegHoles)
             {
                 if (hole.Occupied)
                 {
-                    foreach (var move in LegalMoves)
+                    foreach (var legalMove in LegalMoves)
                     {
-                        // if the hole is occupied and the jump hole is occupied and the to hole is not occupied - available move
-                        if (
-                            move.FromHole.Label == hole.Label 
-                            && move.JumpHole.Occupied == true 
-                            && move.ToHole.Occupied == false
-                            )
+                        if (hole.Label == legalMove.FromHoleLabel)
                         {
-                            availableMove.Add(move);
+                            // get the data for to and jump holes
+                            var toHole = this.PegHoles.Where(h => h.Label == legalMove.ToHoleLabel).FirstOrDefault();
+                            var jumpHole = this.PegHoles.Where(h => h.Label == legalMove.JumpHoleLabel).FirstOrDefault();
+
+                            // if the hole is occupied and the jump hole is occupied and the to hole is not occupied - available move
+                            if (toHole.Occupied == false && jumpHole.Occupied == true)
+                            {
+                                var goodMove = new PegMove();
+                                goodMove.FromHole = hole;
+                                goodMove.ToHole = toHole;
+                                goodMove.JumpHole = jumpHole;
+                                availableMoves.Add(goodMove);
+                            }
                         }
                     }
                 }
             }
-            return availableMove;
+            return availableMoves;
         }
 
         // compare the board after the move to prior boards
         private bool IsMoveGood(PegMove move)
         {
+            bool retVal = true;
+
             // create a copy of the existing board
-            this.CurrentHoles = new List<PegHole>();
+            List<PegHole> currHoles = new List<PegHole>();
             foreach (var hole in this.PegHoles)
-                this.CurrentHoles.Add(hole);
+                currHoles.Add(hole);
 
             // make the move on the current board
+            MovePeg(currHoles, move);
 
-            foreach(var board in PriorBoards)
+            foreach (var board in PriorBoards)
             {
                 // compare the list of holes to prior boards
-
+                if (IsBoardMatch(board.PegHoles, currHoles))
+                {
+                    // board matches prior board, return not good move (false)
+                    retVal = false;
+                    break;
+                }
             }
-            throw new NotImplementedException();
+            return retVal;
         }
 
-        private PegMove MovePeg(List<PegHole> holes, PegMove move)
+        private void MovePeg(List<PegHole> holes, PegMove move)
         {
-            // update the holes according to the move
-            throw new NotImplementedException();
+            // update the list of holes according to the move
+            var fromHole = holes.Where(h => h.Label == move.FromHole.Label).First();
+            fromHole.Occupied = false;
+
+            var toHole = holes.Where(h => h.Label == move.ToHole.Label).First();
+            toHole.Occupied = true;
+
+            var jumpHole = holes.Where(h => h.Label == move.JumpHole.Label).First();
+            jumpHole.Occupied = false;
         }
 
-        private int PegsRemaining()
+        private bool IsBoardMatch(List<PegHole> pegHoles, List<PegHole> currHoles)
         {
-            // how many holes are occupied
-            throw new NotImplementedException();
+            bool match = true;
+            int idx = 1;
+            while (idx <= 15)
+            {
+                var holeA = pegHoles[idx - 1];
+                var holeB = currHoles[idx - 1];
+
+                if (holeA.Occupied != holeB.Occupied)
+                {
+                    match = false;
+                    break;
+                }
+                idx++;
+            }
+            return match;
         }
     }
 }

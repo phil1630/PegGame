@@ -14,7 +14,7 @@ namespace PegGame.Models
 
         public override string ToString()
         {
-            return $"From: {this.FromHole.Label}, To: {this.ToHole.Label}, Jump: {this.JumpHole.Label}\r\n";
+            return $"From: {this.FromHole.Label}, To: {this.ToHole.Label}, Jump: {this.JumpHole.Label}";
         }
     }
 }
